@@ -1,0 +1,21 @@
+[
+    {
+        "id": "frank0521",
+        "ownStock": [
+            {
+                "stockNum": "2344",
+                "cost": "18.1",
+                "purchaseDate": "20201009",
+                "sellDate": "",
+                "income": ""
+            },
+            {
+                "stockNum": "3008",
+                "cost": "3150",
+                "purchaseDate": "20201009",
+                "sellDate": "",
+                "income": ""
+            }
+        ]
+    }
+]
