@@ -27,7 +27,7 @@
     <script src="/javascripts/priceValue/Chart.js" type="text/javascript"></script>
     <script src="/javascripts/priceValue/Chart.bundle.js" type="text/javascript"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <script type="text/javascript" src="/javascripts/priceValue/index.js"></script>
+
     <script type="text/javascript"
         src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/0.5.5/chartjs-plugin-annotation.js"></script>
     <link rel="stylesheet" type="text/css" href="/stylesheets/priceValue/Chart.min.css">
@@ -76,8 +76,10 @@
     <div class="wrapper">
         <!-- Sidebar  -->
         <nav id="sidebar">
-            <div class="sidebar-header">
-                <h3>股票K記事</h3>
+            <div class="sidebar-header" href="/">
+                <a href="/">
+                    <h3>股票K記事</h3>
+                </a>
             </div>
 
             <ul class="list-unstyled components">
@@ -119,7 +121,12 @@
                         </svg>資產控管</a>
                 </li>
                 <li>
-                    <a href="/portfolio">個人資料</a>
+                    <a href="/portfolio">
+                        <svg width="1.5em" height="1.5em" viewBox="0 0 16 16" class="bi bi-file-person-fill"
+                            fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd"
+                                d="M12 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm-1 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm-3 4c2.623 0 4.146.826 5 1.755V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-1.245C3.854 11.825 5.377 11 8 11z" />
+                        </svg>個人資料</a>
                 </li>
             </ul>
 

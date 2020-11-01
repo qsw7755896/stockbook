@@ -15,22 +15,36 @@ socket.on('priceSet', function (val) {
 	var chart = new Chart(ctx, {
 		type: 'line',
 		data: {
-			labels: [val[0].date.substring(6, 8), val[1].date.substring(6, 8), val[2].date.substring(6, 8), val[3].date.substring(6, 8), val[4].date.substring(6, 8), val[5].date.substring(6, 8), val[6].date.substring(6, 8)],
+			//labels: [val[0].date.substring(6, 8), val[1].date.substring(6, 8), val[2].date.substring(6, 8), val[3].date.substring(6, 8), val[4].date.substring(6, 8), val[5].date.substring(6, 8), val[6].date.substring(6, 8)],
+			labels: (function () {
+				var result = [];
+				for (let index = 0; index < val.length; index++) {
+					result.push(val[index].date.substring(6, 8));
+				}
+				return result;
+			})(),
 			datasets: [{
 				label: val[0].stockNum + val[0].stockName + " - 損益",
 				fill: false,
 				backgroundColor: "#33A1C9",
 				borderColor: "#33A1C9",
 				borderWidth: 3,
-				data: [
-					calculate(val[0].cost, val[0].strikePrice),
-					calculate(val[1].cost, val[1].strikePrice),
-					calculate(val[2].cost, val[2].strikePrice),
-					calculate(val[3].cost, val[3].strikePrice),
-					calculate(val[4].cost, val[4].strikePrice),
-					calculate(val[5].cost, val[5].strikePrice),
-					calculate(val[6].cost, val[6].strikePrice)
-				]
+				// data: [
+				// 	calculate(val[0].cost, val[0].strikePrice),
+				// 	calculate(val[1].cost, val[1].strikePrice),
+				// 	calculate(val[2].cost, val[2].strikePrice),
+				// 	calculate(val[3].cost, val[3].strikePrice),
+				// 	calculate(val[4].cost, val[4].strikePrice),
+				// 	calculate(val[5].cost, val[5].strikePrice),
+				// 	calculate(val[6].cost, val[6].strikePrice)
+				// ],
+				data: (function () {
+					var result = [];
+					for (let index = 0; index < val.length; index++) {
+						result.push(calculate(val[index].cost, val[index].strikePrice));
+					}
+					return result;
+				})()
 			}]
 		},
 		options: {
@@ -41,8 +55,8 @@ socket.on('priceSet', function (val) {
 			title: {
 				display: true,
 			},
-			onClick: function(e){
-				console.log('hi',$(this.canvas).attr("id"));
+			onClick: function (e) {
+				console.log('hi', $(this.canvas).attr("id"));
 				window.location.href = '/stockDetail/' + $(this.canvas).attr("id");
 			}
 

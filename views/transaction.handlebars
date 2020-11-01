@@ -1,20 +1,20 @@
 <form method="post" action="/insStock">
-    <div class="form-group">
+    <div class="form-group" name="a1">
         <label for="InputStockNum">股票代號</label>
-        <input type="text" class="form-control" id="InputStockNum" aria-describedby="stockHelp">
+        <input type="text" class="form-control" name="InputStockNum" id="InputStockNum" aria-describedby="stockHelp">
         <small id="stockHelp" class="form-text text-muted">請輸入4位數字代號</small>
     </div>
     <div class="form-group">
         <label for="InputPrice">購入價格</label>
-        <input type="number" class="form-control" id="InputPrice">
+        <input type="number" class="form-control" name="InputPrice" id="InputPrice">
     </div>
     <div class="form-group">
-        <label for="InputPrice">購入張數</label>
-        <input type="number" class="form-control" id="InputPrice">
+        <label for="InputLot">購入張數</label>
+        <input type="number" class="form-control" name="InputLot" id="InputLot">
     </div>
     <div class="form-group">
         <label for="InputDate">買進時間</label>
-        <input type="date" class="form-control" id="InputDate">
+        <input type="date" class="form-control" name="InputDate" id="InputDate">
     </div>
-    <button type="submit" class="btn btn-primary">買進~</button>
+    <button id="trans_submit" type="submit" class="btn btn-primary">買進~</button>
 </form>
