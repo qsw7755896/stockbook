@@ -8,7 +8,7 @@ const CSVToJSON = require('csvtojson');
 const io = require('socket.io');
 const app = express();
 const port = process.env.PORT || 3000;
-const personal = require('C:/Users/User/Desktop/personal.json')
+const personal = require('./personal.json')
 const stock = personal[0];
 /**
  * 路由設定
