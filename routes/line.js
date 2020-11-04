@@ -3,7 +3,13 @@
 const line = require('@line/bot-sdk');
 const express = require('express');
 const querystring = require('querystring');
+const http = require("http");
+const https = require("https")
 const router = express.Router();
+const fs = require('fs');
+const request = require("request");
+const cheerio = require("cheerio");
+const temp={};
 
 // create LINE SDK config from env variables
 const config = {
@@ -114,7 +120,8 @@ function handleEvent(event) {
                               "action": {
                                 "type": "postback",
                                 "label": "給我建議~",
-                                "data": "from=others&&action=suggest"
+                                "data": "from=others&&action=textBox&&title=留言給我~&&keyword=我要留言&&"
+                                  + "text=請以關鍵字「我要留言」為開頭寫下建議或者留下訊息\n基本上一個禮拜內會作出回應，請各位別急~"
                               },
                               "height": "sm",
                               "style": "link"
@@ -158,9 +165,6 @@ function handleEvent(event) {
                           "weight": "bold"
                         },
                         {
-                          "type": "separator"
-                        },
-                        {
                           "type": "box",
                           "layout": "baseline",
                           "contents": [
@@ -189,8 +193,8 @@ function handleEvent(event) {
                               "type": "button",
                               "action": {
                                 "type": "message",
-                                "label": "你好",
-                                "text": "你好"
+                                "label": "yee先生",
+                                "text": "yee先生"
                               },
                               "height": "sm",
                               "style": "link"
@@ -198,9 +202,10 @@ function handleEvent(event) {
                             {
                               "type": "button",
                               "action": {
-                                "type": "message",
-                                "label": "yee先生",
-                                "text": "yee先生"
+                                "type": "postback",
+                                "label": "留言給我",
+                                "data": "from=others&&action=textBox&&title=留言給我~&&keyword=我要留言&&"
+                                  + "text=請以關鍵字「我要留言」為開頭寫下建議或者留下訊息\n基本上一個禮拜內會作出回應，請各位別急~"
                               },
                               "height": "sm",
                               "style": "link"
@@ -226,9 +231,10 @@ function handleEvent(event) {
                             {
                               "type": "button",
                               "action": {
-                                "type": "message",
-                                "label": "action",
-                                "text": "hello"
+                                "type": "postback",
+                                "label": "查詢股票",
+                                "data": "from=others&&action=textBox&&title=查看股票當前資訊~&&keyword=股票{{你想看的股票代號}}"
+                                  + "&&text=請以關鍵字「股票」為開頭，後面緊接股票代號\nEx: 股票3008 就是查詢代號3008當前資訊，目前無法輸入公司名稱作查詢，因為我還不太會 ㄏㄏ"
                               },
                               "height": "sm",
                               "style": "link"
@@ -244,8 +250,9 @@ function handleEvent(event) {
                           "type": "button",
                           "action": {
                             "type": "postback",
-                            "label": "給我建議~",
-                            "data": "from=others&&action=suggest"
+                            "label": "還想要什麼 ? 告訴我",
+                            "data": "from=others&&action=textBox&&title=留言給我~&&keyword=我要留言&&"
+                              + "text=請以關鍵字「我要留言」為開頭寫下建議或者留下訊息\n基本上一個禮拜內會作出回應，請各位別急~"
                           },
                           "height": "sm",
                           "style": "link"
@@ -266,10 +273,68 @@ function handleEvent(event) {
           break;
         case "others":
           switch (data.action) {
-            case "suggest":
+            case "textBox":
               return client.replyMessage(event.replyToken, {
-                type: 'text',
-                text: "不好意思!!再讓我想想看要怎麼紀錄你們的建議~"
+                type: 'flex',
+                altText: 'this is a flex message',
+                contents: {
+                  "type": "bubble",
+                  "body": {
+                    "type": "box",
+                    "layout": "vertical",
+                    "contents": [
+                      {
+                        "type": "text",
+                        "text": data.title,
+                        "weight": "bold",
+                        "size": "xxl"
+                      },
+                      {
+                        "type": "box",
+                        "layout": "baseline",
+                        "margin": "md",
+                        "contents": [
+                          {
+                            "type": "icon",
+                            "size": "sm",
+                            "url": "https://scdn.line-apps.com/n/channel_devcenter/img/fx/review_gold_star_28.png"
+                          },
+                          {
+                            "type": "text",
+                            "text": "關鍵字 : " + data.keyword,
+                            "size": "sm",
+                            "color": "#999999",
+                            "margin": "md",
+                            "flex": 0
+                          }
+                        ]
+                      },
+                      {
+                        "type": "box",
+                        "layout": "vertical",
+                        "margin": "lg",
+                        "spacing": "sm",
+                        "contents": [
+                          {
+                            "type": "box",
+                            "layout": "baseline",
+                            "spacing": "sm",
+                            "contents": [
+                              {
+                                "type": "text",
+                                "text": data.text,
+                                "wrap": true,
+                                "color": "#666666",
+                                "size": "sm",
+                                "flex": 5
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
               });
               break;
             case "gameCurse":
@@ -298,328 +363,15 @@ function handleEvent(event) {
 
 async function handleText(message, replyToken, source) {
   switch (message.text) {
-    case "你好" || "hi":
-    case '測試1':
-      return client.replyMessage(replyToken, [
-        {
-          type: 'sticker',
-          packageId: '1',
-          stickerId: '1'
-        },
-        {
-          type: 'image',
-          originalContentUrl: 'https://developers.line.biz/media/messaging-api/messages/image-full-04fbba55.png',
-          previewImageUrl: 'https://developers.line.biz/media/messaging-api/messages/image-167efb33.png'
-        },
-        {
-          type: 'video',
-          originalContentUrl: 'https://www.sample-videos.com/video123/mp4/240/big_buck_bunny_240p_1mb.mp4',
-          previewImageUrl: 'https://www.sample-videos.com/img/Sample-jpg-image-50kb.jpg'
-        },
-        {
-          type: 'audio',
-          originalContentUrl: 'https://www.sample-videos.com/audio/mp3/crowd-cheering.mp3',
-          duration: '27000'
-        },
-        {
-          type: 'location',
-          title: 'my location',
-          address: '〒150-0002 東京都渋谷区渋谷２丁目２１−１',
-          latitude: 35.65910807942215,
-          longitude: 139.70372892916203
-        }
-      ]);
-
-    case '測試2':
-      return client.replyMessage(replyToken, [
-        {
-          type: 'imagemap',
-          baseUrl: 'https://github.com/line/line-bot-sdk-nodejs/raw/master/examples/kitchensink/static/rich',
-          altText: 'Imagemap alt text',
-          baseSize: {
-            width: 1040,
-            height: 1040
-          },
-          actions: [
-            {
-              area: {
-                x: 0,
-                y: 0,
-                width: 520,
-                height: 520
-              },
-              type: 'uri',
-              linkUri: 'https://store.line.me/family/manga/en'
-            },
-            {
-              area: {
-                x: 520,
-                y: 0,
-                width: 520,
-                height: 520
-              },
-              type: 'uri',
-              linkUri: 'https://store.line.me/family/music/en'
-            },
-            {
-              area: {
-                x: 0,
-                y: 520,
-                width: 520,
-                height: 520
-              },
-              type: 'uri',
-              linkUri: 'https://store.line.me/family/play/en'
-            },
-            {
-              area: {
-                x: 520,
-                y: 520,
-                width: 520,
-                height: 520
-              },
-              type: 'message',
-              text: 'URANAI!'
-            },
-          ],
-          video: {
-            originalContentUrl: 'https://github.com/line/line-bot-sdk-nodejs/raw/master/examples/kitchensink/static/imagemap/video.mp4',
-            previewImageUrl: 'https://github.com/line/line-bot-sdk-nodejs/raw/master/examples/kitchensink/static/imagemap/preview.jpg',
-            area: {
-              x: 280,
-              y: 385,
-              width: 480,
-              height: 270,
-            },
-            externalLink: {
-              linkUri: 'https://line.me',
-              label: 'LINE'
-            }
-          },
-        },
-        {
-          type: 'template',
-          altText: 'Buttons alt text',
-          template: {
-            type: 'buttons',
-            thumbnailImageUrl: 'https://github.com/line/line-bot-sdk-nodejs/raw/master/examples/kitchensink/static/buttons/1040.jpg',
-            title: 'My button sample',
-            text: 'Hello, my button',
-            actions: [
-              {
-                label: 'Go to line.me',
-                type: 'uri',
-                uri: 'https://line.me'
-              },
-              {
-                label: 'Say hello1',
-                type: 'postback',
-                data: 'hello こんにちは'
-              },
-              {
-                label: '言 hello2',
-                type: 'postback',
-                data: 'hello こんにちは',
-                text: 'hello こんにちは'
-              },
-              {
-                label: 'Say message',
-                type: 'message',
-                text: 'Rice=米'
-              },
-            ],
-          },
-        },
-        {
-          type: 'flex',
-          altText: 'this is a flex message',
-          contents: {
-            type: 'bubble',
-            body: {
-              type: 'box',
-              layout: 'vertical',
-              contents: [
-                {
-                  type: 'text',
-                  text: 'hello'
-                },
-                {
-                  type: 'text',
-                  text: 'world'
-                }
-              ]
-            }
-          }
-        }
-      ]);
-
-    case 'Buttons template':
-      return client.replyMessage(replyToken,
-        {
-          type: 'template',
-          altText: 'This is a buttons template',
-          template: {
-            type: 'buttons',
-            thumbnailImageUrl: 'https://ithelp.ithome.com.tw/images/ironman/11th/event/kv_event/kv-bg-addfly.png',
-            imageAspectRatio: 'rectangle',
-            imageSize: 'cover',
-            imageBackgroundColor: '#FFFFFF',
-            title: 'Menu',
-            text: 'Please select',
-            defaultAction: {
-              type: 'uri',
-              label: 'View detail',
-              uri: 'http://example.com/page/123',
-            },
-            actions: [
-              {
-                type: 'postback',
-                label: 'Buy',
-                data: 'action=buy&itemid=123',
-              },
-              {
-                type: 'message',
-                label: 'it 邦幫忙鐵人賽',
-                text: 'it 邦幫忙鐵人賽',
-              },
-              {
-                type: 'uri',
-                label: 'View detail',
-                uri: 'https://ithelp.ithome.com.tw/2020ironman',
-              },
-            ],
-          },
-        });
-
-    case 'Confirm template':
-      return client.replyMessage(replyToken,
-        {
-          type: 'template',
-          altText: 'this is a confirm template',
-          template: {
-            type: 'confirm',
-            text: 'Are you sure?',
-            actions: [
-              {
-                type: 'message',
-                label: 'Yes',
-                text: 'yes',
-              },
-              {
-                type: 'message',
-                label: 'No',
-                text: 'no',
-              },
-            ],
-          },
-        });
-
-    case 'Carousel template':
-      return client.replyMessage(replyToken,
-        {
-          type: 'template',
-          altText: 'this is a carousel template',
-          template: {
-            type: 'carousel',
-            columns: [
-              {
-                thumbnailImageUrl: 'https://ithelp.ithome.com.tw/images/ironman/11th/event/kv_event/kv-bg-addfly.png',
-                imageBackgroundColor: '#FFFFFF',
-                title: 'this is menu',
-                text: 'description',
-                defaultAction: {
-                  type: 'uri',
-                  label: 'View detail',
-                  uri: 'https://ithelp.ithome.com.tw/2020ironman',
-                },
-                actions: [
-                  {
-                    type: 'postback',
-                    label: 'Buy',
-                    data: 'action=buy&itemid=111',
-                  },
-                  {
-                    type: 'message',
-                    label: 'it 邦幫忙鐵人賽',
-                    text: 'it 邦幫忙鐵人賽',
-                  },
-                  {
-                    type: 'uri',
-                    label: 'View detail',
-                    uri: 'https://ithelp.ithome.com.tw/2020ironman',
-                  },
-                ],
-              },
-              {
-                thumbnailImageUrl: 'https://ithelp.ithome.com.tw/images/ironman/11th/event/kv_event/kv-bg-addfly.png',
-                imageBackgroundColor: '#000000',
-                title: 'this is menu',
-                text: 'description',
-                defaultAction: {
-                  type: 'uri',
-                  label: 'View detail',
-                  uri: 'https://ithelp.ithome.com.tw/2020ironman',
-                },
-                actions: [
-                  {
-                    type: 'postback',
-                    label: 'Buy',
-                    data: 'action=buy&itemid=222',
-                  },
-                  {
-                    type: 'message',
-                    label: 'it 邦幫忙鐵人賽',
-                    text: 'it 邦幫忙鐵人賽',
-                  },
-                  {
-                    type: 'uri',
-                    label: 'View detail',
-                    uri: 'https://ithelp.ithome.com.tw/2020ironman',
-                  },
-                ],
-              },
-            ],
-            imageAspectRatio: 'rectangle',
-            imageSize: 'cover',
-          },
-        });
-
-    case 'Image carousel template':
-      return client.replyMessage(replyToken,
-        {
-          type: 'template',
-          altText: 'this is a image carousel template',
-          template: {
-            type: 'image_carousel',
-            columns: [
-              {
-                imageUrl: 'https://ithelp.ithome.com.tw/images/ironman/11th/event/kv_event/kv-bg-addfly.png',
-                action: {
-                  type: 'postback',
-                  label: 'Buy',
-                  data: 'action=buy&itemid=111',
-                },
-              },
-              {
-                imageUrl: 'https://ithelp.ithome.com.tw/images/ironman/11th/event/kv_event/kv-bg-addfly.png',
-                action: {
-                  type: 'message',
-                  label: 'Yes',
-                  text: 'yes',
-                },
-              },
-              {
-                imageUrl: 'https://ithelp.ithome.com.tw/images/ironman/11th/event/kv_event/kv-bg-addfly.png',
-                action: {
-                  type: 'uri',
-                  label: 'View detail',
-                  uri: 'http://example.com/page/222',
-                },
-              },
-            ],
-          },
-        });
-
+    case "你好":
+    case "妳好":
+      return client.replyMessage(replyToken, {
+        type: 'text',
+        text: "你好~\n我是line機器人~"
+      });
+    case "講笑話":
+      pttCrawler();
+      break;
     case 'quick reply':
       return client.replyMessage(replyToken,
         {
@@ -672,145 +424,207 @@ async function handleText(message, replyToken, source) {
 
     default:
       switch (true) {
-        case /^鐵人賽/.test(message.text):
-          const parseTemp = /^鐵人賽(\d\d)/.exec(message.text);
-          if (parseTemp) {
-            const res = await ithome.ithome2020api(parseTemp[1]);
+        case /^股票/.test(message.text):
+          var url = "https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_" + message.text.substring(2, message.text.length) + ".tw"
 
-            return client.replyMessage(replyToken, {
-              type: 'flex',
-              altText: `鐵人賽組別：${res.teams.title}`,
-              contents: {
-                type: 'bubble',
-                header: {
-                  type: 'box',
-                  layout: 'vertical',
-                  contents: [
-                    {
-                      type: 'box',
-                      layout: 'horizontal',
-                      contents: [
+          https.get(url, (res) => {
+            res.setEncoding('utf8');
+            let rawData = '';
+            res.on('data', (chunk) => { rawData += chunk; });
+            res.on('end', () => {
+              try {
+                const parsedData = JSON.parse(rawData);
+                return client.replyMessage(replyToken, {
+                  type: 'flex',
+                  altText: 'this is a flex message',
+                  contents: {
+                    "type": "bubble",
+                    "body": {
+                      "type": "box",
+                      "layout": "vertical",
+                      "contents": [
                         {
-                          type: 'image',
-                          url: 'https://ithelp.ithome.com.tw/images/ironman/11th/event/kv_event/kv-bg-addfly.png',
-                          aspectMode: 'cover',
-                          aspectRatio: '2:1',
-                          flex: 1,
-                          size: 'full'
-                        }
-                      ]
-                    }
-                  ],
-                  paddingAll: '0px'
-                },
-                body: {
-                  type: 'box',
-                  layout: 'vertical',
-                  contents: [
-                    {
-                      type: 'box',
-                      layout: 'vertical',
-                      contents: [
-                        {
-                          type: 'box',
-                          layout: 'vertical',
-                          contents: [
-                            {
-                              type: 'text',
-                              contents: [],
-                              size: 'xl',
-                              wrap: true,
-                              text: res.teams.title,
-                              color: '#ffffff',
-                              weight: 'bold'
-                            },
-                            {
-                              type: 'text',
-                              text: res.teams.desc,
-                              color: '#ffffffcc',
-                              size: 'sm',
-                              wrap: true
-                            }
-                          ],
-                          spacing: 'sm'
+                          "type": "text",
+                          "text": parsedData.msgArray[0].nf,
+                          "weight": "bold",
+                          "size": "xxl",
+                          "wrap": true
                         },
                         {
-                          type: 'text',
-                          text: `${res.teams.bar}%`,
-                          color: '#ffffffde',
-                          margin: 'lg',
-                          size: 'xs'
-                        },
-                        {
-                          type: 'box',
-                          layout: 'vertical',
-                          contents: [
+                          "type": "box",
+                          "layout": "baseline",
+                          "margin": "md",
+                          "contents": [
                             {
-                              type: 'box',
-                              layout: 'vertical',
-                              contents: [
-                                {
-                                  type: 'filler'
-                                }
-                              ],
-                              width: `${res.teams.bar}%`,
-                              height: '6px',
-                              backgroundColor: '#ffffff5A'
+                              "type": "text",
+                              "text": parsedData.msgArray[0].ch,
+                              "size": "sm",
+                              "color": "#999999",
+                              "margin": "md",
+                              "flex": 0
                             }
                           ]
                         },
                         {
-                          type: 'box',
-                          layout: 'vertical',
-                          contents: [
+                          "type": "box",
+                          "layout": "vertical",
+                          "margin": "lg",
+                          "spacing": "sm",
+                          "contents": [
                             {
-                              type: 'box',
-                              layout: 'vertical',
-                              contents: [
+                              "type": "box",
+                              "layout": "baseline",
+                              "spacing": "sm",
+                              "contents": [
                                 {
-                                  type: 'text',
-                                  contents: [],
-                                  size: 'sm',
-                                  wrap: true,
-                                  margin: 'lg',
-                                  color: '#ffffffde',
-                                  text: `累計文章：${res.teams.cumulativeArticle}`
+                                  "type": "text",
+                                  "text": "成交價",
+                                  "color": "#aaaaaa",
+                                  "size": "sm",
+                                  "flex": 1
                                 },
                                 {
-                                  type: 'text',
-                                  contents: [],
-                                  size: 'sm',
-                                  wrap: true,
-                                  margin: 'lg',
-                                  color: '#ffffffde',
-                                  text: `團隊人數：${res.teams.numberTeams}人`
+                                  "type": "text",
+                                  "text": "$" + parsedData.msgArray[0].pz,
+                                  "wrap": true,
+                                  "color": "#666666",
+                                  "size": "sm",
+                                  "flex": 5
+                                }
+                              ]
+                            },
+                            {
+                              "type": "box",
+                              "layout": "baseline",
+                              "spacing": "sm",
+                              "contents": [
+                                {
+                                  "type": "text",
+                                  "text": "最高價",
+                                  "color": "#aaaaaa",
+                                  "size": "sm",
+                                  "flex": 1
                                 },
                                 {
-                                  type: 'text',
-                                  contents: [],
-                                  size: 'sm',
-                                  wrap: true,
-                                  margin: 'lg',
-                                  color: '#ffffffde',
-                                  text: `團隊狀態：${res.teams.teamStatus}`
+                                  "type": "text",
+                                  "text": "$" + parsedData.msgArray[0].h,
+                                  "wrap": true,
+                                  "color": "#666666",
+                                  "size": "sm",
+                                  "flex": 5
+                                }
+                              ]
+                            },
+                            {
+                              "type": "box",
+                              "layout": "baseline",
+                              "spacing": "sm",
+                              "contents": [
+                                {
+                                  "type": "text",
+                                  "text": "最低價",
+                                  "color": "#aaaaaa",
+                                  "size": "sm",
+                                  "flex": 1
+                                },
+                                {
+                                  "type": "text",
+                                  "text": "$" + parsedData.msgArray[0].l,
+                                  "wrap": true,
+                                  "color": "#666666",
+                                  "size": "sm",
+                                  "flex": 5
+                                }
+                              ]
+                            },
+                            {
+                              "type": "box",
+                              "layout": "baseline",
+                              "spacing": "sm",
+                              "contents": [
+                                {
+                                  "type": "text",
+                                  "text": "成交量",
+                                  "color": "#aaaaaa",
+                                  "size": "sm",
+                                  "flex": 1
+                                },
+                                {
+                                  "type": "text",
+                                  "text": parsedData.msgArray[0].tv,
+                                  "wrap": true,
+                                  "color": "#666666",
+                                  "size": "sm",
+                                  "flex": 5
                                 }
                               ]
                             }
-                          ],
-                          paddingAll: '13px',
-                          backgroundColor: '#ffffff1A',
-                          cornerRadius: '2px',
-                          margin: 'xl'
+                          ]
                         }
                       ]
+                    },
+                    "footer": {
+                      "type": "box",
+                      "layout": "vertical",
+                      "spacing": "sm",
+                      "contents": [
+                        {
+                          "type": "button",
+                          "style": "link",
+                          "height": "sm",
+                          "action": {
+                            "type": "uri",
+                            "label": "詳細",
+                            "uri": "https://goodinfo.tw/StockInfo/StockDetail.asp?STOCK_ID=" + parsedData.msgArray[0].c
+                          }
+                        },
+                        {
+                          "type": "spacer",
+                          "size": "sm"
+                        }
+                      ],
+                      "flex": 0
                     }
-                  ],
-                  paddingAll: '20px',
-                  backgroundColor: '#464F69'
-                }
+                  }
+                });
+              } catch (e) {
+                console.error(e.message);
               }
             });
+          }).on('error', (e) => { console.log(`Got error: ${e.message}`); });
+          break;
+        case /^我要留言/.test(message.text):
+
+          const options = {
+            host: 'api.line.me',
+            path: '/v2/bot/profile/' + source.userId,
+            headers: {
+              Authorization: 'Bearer ' + config.channelAccessToken
+            }
           }
+          https.get(options, function (response) {
+            var result = ''
+            response.on('data', function (chunk) {
+              result += chunk;
+            });
+
+            response.on('end', function () {
+              const parsedData = JSON.parse(result);
+              const jsdata = {
+                "name": parsedData.displayName,
+                "saying": message.text,
+                "date": new Date()
+              }
+              var filePath = "./data_file/suggest.json";
+              fs.readFile(filePath, function (err, file) {
+                var fileString = file.toString();
+                var obj = fileString ? JSON.parse(fileString) : [];
+                obj.push(jsdata);
+                fs.writeFile(filePath, JSON.stringify(obj), function (err) { });
+              });
+            });
+          }).on('error', (e) => { console.log(`Got error: ${e.message}`); });
+          break;
 
         default:
           console.log(`Echo message to ${replyToken}: ${message.text}`);
@@ -942,4 +756,29 @@ function handleSticker(message, replyToken) {
     }
   );
 }
+
+const pttCrawler = () => {
+  request({
+      url: "https://www.ptt.cc/bbs/joke/search?q=%E7%AC%91%E8%A9%B1%E9%9B%86",
+      method: "GET"
+  }, (error, res, body) => {
+      // 如果有錯誤訊息，或沒有 body(內容)，就 return
+      if (error || !body) {
+          return;
+      }
+
+      const data = [];
+      const $ = cheerio.load(body); // 載入 body
+      const list = $(".r-list-container .r-ent");
+      for (let i = 0; i < list.length; i++) {
+          const title = list.eq(i).find('.title a').text();
+          const author = list.eq(i).find('.meta .author').text();
+          const date = list.eq(i).find('.meta .date').text();
+          const link = list.eq(i).find('.title a').attr('href');
+
+          data.push({ title, author, date, link });
+      }
+      console.log('123',data);
+  });
+};
 module.exports = router;

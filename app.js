@@ -10,10 +10,11 @@ const session = require('express-session');
 const FileStore = require('session-file-store')(session);
 const line = require('@line/bot-sdk');  // 引用linebot SDK
 const lineRouter = require('./routes/line');
+//const data_file = require('./data_file');
 //變數設定
 const app = express();
 const port = process.env.PORT || 3000;
-const personal = require('./personal.json')
+const personal = require('./data_file/personal.json')
 const stock = personal[0];
 var identityKey = 'skey';
 
@@ -29,6 +30,7 @@ const client = new line.Client(config);
  * use 設定
  */
 app.use(express.static('public'))
+app.use(express.static('data_file'))
 app.use(require('body-parser')());
 app.use(session({
   name: identityKey,
@@ -135,16 +137,8 @@ app.get('/logout', function (req, res, next) {
     res.redirect('/');
   });
 });
-// line bot
-// app.post('/line', (req, res) => {
-//   Promise
-//     .all(req.body.events.map(handleEvent))
-//     .then((result) => res.json(result))
-//     .catch((err) => {
-//       console.error(err);
-//       res.status(500).end();
-//     });
-// });
+//
+app.post('/suggest', function (req, res, next) {});
 /**
  * create server
  */
@@ -161,13 +155,11 @@ servIo.on('connection', function (socket) {
   /* 設定首頁圖表 */
   for (let index = 0; index < stock.ownStock.length; index++) {
     //convert users.csv file to JSON array
-    CSVToJSON().fromFile('stockList_' + stock.ownStock[index].stockNum + '.csv').then(array => {
+    CSVToJSON().fromFile('./data_file/stockList_' + stock.ownStock[index].stockNum + '.csv').then(array => {
       socket.emit('priceSet', array);
 
     }).catch(err => { console.log(err); });
   }
-
-
 });
 
 /**
@@ -186,7 +178,7 @@ function writeCSV(jsdata, appendflag) {
 
   if (appendflag) {
     for (let index = 0; index < jsdata.length; index++) {
-      var tmp = 'stockList_' + jsdata[index].c + '.csv';
+      var tmp = './data_file/stockList_' + jsdata[index].c + '.csv';
       var CsvWriter = createCsvWriter({
         path: tmp,
         header: [
@@ -201,7 +193,7 @@ function writeCSV(jsdata, appendflag) {
       });
 
       var newobj = stock.ownStock.find(obj => obj.stockNum === jsdata[index].c);
-      if (fs.existsSync('stockList_' + jsdata[index].c + '.csv')) {
+      if (fs.existsSync('./data_file/stockList_' + jsdata[index].c + '.csv')) {
         var element = [{
           stockNum: jsdata[index].c,
           stockName: jsdata[index].nf,
@@ -238,7 +230,7 @@ function writeCSV(jsdata, appendflag) {
     }
   }
   else {
-    var tmp = 'stockList_' + jsdata[0].stockNum + '.csv';
+    var tmp = './data_file/stockList_' + jsdata[0].stockNum + '.csv';
     var CsvWriter = createCsvWriter({
       path: tmp,
       header: [
@@ -266,7 +258,7 @@ function writeCSV(jsdata, appendflag) {
 function CorrectionCSV() {
   for (let y = 0; y < stock.ownStock.length; y++) {
     //convert users.csv file to JSON array
-    CSVToJSON().fromFile('stockList_' + stock.ownStock[y].stockNum + '.csv').then(array => {
+    CSVToJSON().fromFile('./data_file/stockList_' + stock.ownStock[y].stockNum + '.csv').then(array => {
       var arraytmp = [];
       var date_flag = "";
       for (let i = 0; i < array.length; i++) {
@@ -288,138 +280,4 @@ function CorrectionCSV() {
       writeCSV(arraytmp, false);
     }).catch(err => { console.log(err); });
   }
-}
-
-// event handler
-function handleEvent(event) {
-  if (event.type !== 'message' || event.message.type !== 'text') {
-    // ignore non-text-message event
-    return Promise.resolve(null);
-  }
-
-  // create a echoing text message
-  const echo = { type: 'text', text: "444" };
-
-  // use reply API
-  return client.replyMessage(event.replyToken, [
-    {
-      type: 'imagemap',
-      baseUrl: 'https://github.com/line/line-bot-sdk-nodejs/raw/master/examples/kitchensink/static/rich',
-      altText: 'Imagemap alt text',
-      baseSize: {
-        width: 1040,
-        height: 1040
-      },
-      actions: [
-        {
-          area: {
-            x: 0,
-            y: 0,
-            width: 520,
-            height: 520
-          },
-          type: 'uri',
-          linkUri: 'https://store.line.me/family/manga/en'
-        },
-        {
-          area: {
-            x: 520,
-            y: 0,
-            width: 520,
-            height: 520
-          },
-          type: 'uri',
-          linkUri: 'https://store.line.me/family/music/en'
-        },
-        {
-          area: {
-            x: 0,
-            y: 520,
-            width: 520,
-            height: 520
-          },
-          type: 'uri',
-          linkUri: 'https://store.line.me/family/play/en'
-        },
-        {
-          area: {
-            x: 520,
-            y: 520,
-            width: 520,
-            height: 520
-          },
-          type: 'message',
-          text: 'URANAI!'
-        },
-      ],
-      video: {
-        originalContentUrl: 'https://github.com/line/line-bot-sdk-nodejs/raw/master/examples/kitchensink/static/imagemap/video.mp4',
-        previewImageUrl: 'https://github.com/line/line-bot-sdk-nodejs/raw/master/examples/kitchensink/static/imagemap/preview.jpg',
-        area: {
-          x: 280,
-          y: 385,
-          width: 480,
-          height: 270,
-        },
-        externalLink: {
-          linkUri: 'https://line.me',
-          label: 'LINE'
-        }
-      },
-    },
-    {
-      type: 'template',
-      altText: 'Buttons alt text',
-      template: {
-        type: 'buttons',
-        thumbnailImageUrl: 'https://github.com/line/line-bot-sdk-nodejs/raw/master/examples/kitchensink/static/buttons/1040.jpg',
-        title: 'My button sample',
-        text: 'Hello, my button',
-        actions: [
-          {
-            label: 'Go to line.me',
-            type: 'uri',
-            uri: 'https://line.me'
-          },
-          {
-            label: 'Say hello1',
-            type: 'postback',
-            data: 'hello こんにちは'
-          },
-          {
-            label: '言 hello2',
-            type: 'postback',
-            data: 'hello こんにちは',
-            text: 'hello こんにちは'
-          },
-          {
-            label: 'Say message',
-            type: 'message',
-            text: 'Rice=米'
-          },
-        ],
-      },
-    },
-    {
-      type: 'flex',
-      altText: 'this is a flex message',
-      contents: {
-        type: 'bubble',
-        body: {
-          type: 'box',
-          layout: 'vertical',
-          contents: [
-            {
-              type: 'text',
-              text: 'hello'
-            },
-            {
-              type: 'text',
-              text: 'world'
-            }
-          ]
-        }
-      }
-    }
-  ]);
 }
