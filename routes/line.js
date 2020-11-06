@@ -9,7 +9,7 @@ const router = express.Router();
 const fs = require('fs');
 const request = require("request");
 const cheerio = require("cheerio");
-const temp={};
+const listArray = [];
 
 // create LINE SDK config from env variables
 const config = {
@@ -221,9 +221,10 @@ function handleEvent(event) {
                             {
                               "type": "button",
                               "action": {
-                                "type": "message",
-                                "label": "講笑話",
-                                "text": "講笑話"
+                                "type": "postback",
+                                "label": "查詢股票新聞",
+                                "data": "from=others&&action=textBox&&title=查詢股票PTT&&keyword=ptt股票 {{關鍵字}}"
+                                  + "&&text=請以關鍵字「ptt股票」為開頭，空一格後面接關鍵字\nEx: ptt股票 爆跌，就是查詢股票版上關於爆跌的新聞，連結會通網ptt該篇文章"
                               },
                               "height": "sm",
                               "style": "link"
@@ -369,8 +370,150 @@ async function handleText(message, replyToken, source) {
         type: 'text',
         text: "你好~\n我是line機器人~"
       });
-    case "講笑話":
-      pttCrawler();
+    case "Yee先生":
+    case "yee先生":
+    case "Yee":
+    case "yee":
+      return client.replyMessage(replyToken,
+        {
+          type: 'flex',
+          altText: 'this is a flex message',
+          contents: {
+            "type": "bubble",
+            "header": {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "角色卡",
+                  "size": "lg",
+                  "color": "#FFFFFF",
+                  "weight": "bold"
+                }
+              ],
+              "backgroundColor": "#6C757D"
+            },
+            "body": {
+              "type": "box",
+              "layout": "vertical",
+              "contents": [
+                {
+                  "type": "text",
+                  "text": "Yee先生",
+                  "weight": "bold",
+                  "size": "xxl"
+                },
+                {
+                  "type": "box",
+                  "layout": "baseline",
+                  "margin": "md",
+                  "contents": [
+                    {
+                      "type": "text",
+                      "text": "ㄎㄎ",
+                      "size": "sm",
+                      "color": "#999999",
+                      "margin": "md",
+                      "flex": 0
+                    }
+                  ]
+                },
+                {
+                  "type": "box",
+                  "layout": "vertical",
+                  "margin": "lg",
+                  "spacing": "sm",
+                  "contents": [
+                    {
+                      "type": "box",
+                      "layout": "baseline",
+                      "spacing": "sm",
+                      "contents": [
+                        {
+                          "type": "text",
+                          "text": "嗨~這裡是一款很廢的line機器人，\n你們想要的功能我做不到，\n你們不想要的廢功能卻是我的長項。",
+                          "wrap": true,
+                          "color": "#666666",
+                          "size": "sm",
+                          "flex": 5
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "footer": {
+              "type": "box",
+              "layout": "vertical",
+              "spacing": "sm",
+              "contents": [
+                {
+                  "type": "box",
+                  "layout": "horizontal",
+                  "contents": [
+                    {
+                      "type": "button",
+                      "action": {
+                        "type": "message",
+                        "label": "yee先生",
+                        "text": "yee先生"
+                      },
+                      "height": "sm",
+                      "style": "link"
+                    },
+                    {
+                      "type": "button",
+                      "action": {
+                        "type": "postback",
+                        "label": "留言給我",
+                        "data": "from=others&&action=textBox&&title=留言給我~&&keyword=我要留言&&"
+                          + "text=請以關鍵字「我要留言」為開頭寫下建議或者留下訊息\n基本上一個禮拜內會作出回應，請各位別急~"
+                      },
+                      "height": "sm",
+                      "style": "link"
+                    }
+                  ]
+                },
+                {
+                  "type": "box",
+                  "layout": "horizontal",
+                  "contents": [
+                    {
+                      "type": "button",
+                      "action": {
+                        "type": "postback",
+                        "label": "查詢股票",
+                        "data": "from=others&&action=textBox&&title=查看股票當前資訊~&&keyword=股票{{你想看的股票代號}}"
+                          + "&&text=請以關鍵字「股票」為開頭，後面緊接股票代號\nEx: 股票3008 就是查詢代號3008當前資訊，目前無法輸入公司名稱作查詢，因為我還不太會 ㄏㄏ"
+                      },
+                      "height": "sm",
+                      "style": "link"
+                    },
+                    {
+                      "type": "button",
+                      "action": {
+                        "type": "postback",
+                        "label": "查詢股票新聞",
+                        "data": "from=others&&action=textBox&&title=查詢股票PTT&&keyword=ptt股票 {{關鍵字}}"
+                          + "&&text=請以關鍵字「ptt股票」為開頭，空一格後面接關鍵字\nEx: ptt股票 爆跌，就是查詢股票版上關於爆跌的新聞，連結會通網ptt該篇文章"
+                      },
+                      "height": "sm",
+                      "style": "link"
+                    }
+                  ]
+                },
+                {
+                  "type": "spacer",
+                  "size": "sm"
+                }
+              ],
+              "flex": 0
+            }
+          }
+
+        });
       break;
     case 'quick reply':
       return client.replyMessage(replyToken,
@@ -426,7 +569,6 @@ async function handleText(message, replyToken, source) {
       switch (true) {
         case /^股票/.test(message.text):
           var url = "https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_" + message.text.substring(2, message.text.length) + ".tw"
-
           https.get(url, (res) => {
             res.setEncoding('utf8');
             let rawData = '';
@@ -594,7 +736,6 @@ async function handleText(message, replyToken, source) {
           }).on('error', (e) => { console.log(`Got error: ${e.message}`); });
           break;
         case /^我要留言/.test(message.text):
-
           const options = {
             host: 'api.line.me',
             path: '/v2/bot/profile/' + source.userId,
@@ -625,14 +766,124 @@ async function handleText(message, replyToken, source) {
             });
           }).on('error', (e) => { console.log(`Got error: ${e.message}`); });
           break;
+        case /^Ptt股票 /.test(message.text):
+        case /^ptt股票 /.test(message.text):
+          var url = "https://www.ptt.cc/bbs/stock/search?q=" + message.text.substring(6, message.text.length);
+          url = encodeURI(url);
+          https.get(url, (res) => {
+            res.setEncoding('utf8');
+            let rawData = '';
+            res.on('data', (chunk) => { rawData += chunk; });
+            res.on('end', () => {
+              try {
+                const $ = cheerio.load(rawData); // 載入 body
+                const dataArray = [];
+                //const list = $(target);
+                const list = $(".r-list-container .r-ent");
 
-        default:
-          console.log(`Echo message to ${replyToken}: ${message.text}`);
-          const echo = {
-            type: 'text',
-            text: message.text
-          };
-          return client.replyMessage(replyToken, echo);
+                const obj = [];
+                for (let i = 0; i < list.length; i++) {
+                  if (i > 4) break;
+                  console.log(list.eq(i).find('.title a').text());
+                  obj.push({
+                    "type": "button",
+                    "style": "link",
+                    "height": "sm",
+                    "action": {
+                      "type": "uri",
+                      "label": list.eq(i).find('.title a').text(),
+                      "uri": "https://www.ptt.cc/" + list.eq(i).find('.title a').attr('href')
+                    }
+                  });
+                }
+                return client.replyMessage(replyToken, {
+                  type: 'flex',
+                  altText: 'this is a flex message',
+                  contents: {
+                    "type": "bubble",
+                    "body": {
+                      "type": "box",
+                      "layout": "vertical",
+                      "contents": [
+                        {
+                          "type": "text",
+                          "text": "股票八卦",
+                          "weight": "bold",
+                          "size": "xl"
+                        },
+                        {
+                          "type": "box",
+                          "layout": "vertical",
+                          "margin": "lg",
+                          "spacing": "sm",
+                          "contents": [
+                            {
+                              "type": "box",
+                              "layout": "baseline",
+                              "spacing": "sm",
+                              "contents": [
+                                {
+                                  "type": "text",
+                                  "text": "來自",
+                                  "color": "#aaaaaa",
+                                  "size": "sm",
+                                  "flex": 1
+                                },
+                                {
+                                  "type": "text",
+                                  "text": "PTT STOCK版，最近五筆",
+                                  "wrap": true,
+                                  "color": "#666666",
+                                  "size": "sm",
+                                  "flex": 5
+                                }
+                              ]
+                            },
+                            {
+                              "type": "box",
+                              "layout": "baseline",
+                              "spacing": "sm",
+                              "contents": [
+                                {
+                                  "type": "text",
+                                  "text": "關鍵字",
+                                  "color": "#aaaaaa",
+                                  "size": "sm",
+                                  "flex": 1
+                                },
+                                {
+                                  "type": "text",
+                                  "text": "PTT",
+                                  "wrap": true,
+                                  "color": "#666666",
+                                  "size": "sm",
+                                  "flex": 5
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "footer": {
+                      "type": "box",
+                      "layout": "vertical",
+                      "spacing": "sm",
+                      "contents": obj,
+                      "flex": 0
+                    }
+                  }
+                });
+              } catch (e) {
+                console.error(e.message);
+              }
+            });
+            process.on('unhandledRejection', error => {
+              console.error('unhandledRejection', error);
+              process.exit(1) // To exit with a 'failure' code
+            });
+          });
+          break;
       }
   }
 }
@@ -757,28 +1008,34 @@ function handleSticker(message, replyToken) {
   );
 }
 
-const pttCrawler = () => {
+function pttCrawler(url, backfunc) {
+
   request({
-      url: "https://www.ptt.cc/bbs/joke/search?q=%E7%AC%91%E8%A9%B1%E9%9B%86",
-      method: "GET"
+    "url": url,
+    "method": "GET"
   }, (error, res, body) => {
+
+    try {
       // 如果有錯誤訊息，或沒有 body(內容)，就 return
       if (error || !body) {
-          return;
+        return;
       }
-
-      const data = [];
       const $ = cheerio.load(body); // 載入 body
+      const dataArray = [];
+      //const list = $(target);
       const list = $(".r-list-container .r-ent");
       for (let i = 0; i < list.length; i++) {
-          const title = list.eq(i).find('.title a').text();
-          const author = list.eq(i).find('.meta .author').text();
-          const date = list.eq(i).find('.meta .date').text();
-          const link = list.eq(i).find('.title a').attr('href');
-
-          data.push({ title, author, date, link });
+        const title = list.eq(i).find('.title a').text();
+        const link = list.eq(i).find('.title a').attr('href');
+        const date = list.eq(i).find('.meta .date').text();
+        dataArray.push({ title, date, link });
       }
-      console.log('123',data);
+
+      backfunc(dataArray);
+    } catch (e) {
+      console.error(e.message);
+    }
   });
 };
+
 module.exports = router;
