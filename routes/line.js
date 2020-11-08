@@ -1013,11 +1013,11 @@ async function handleText(message, replyToken, source) {
                 if(err)
                   console.log('1',err);
                 var fileString = file.toString();
+                console.log('fileString',fileString);
                 var obj = fileString ? JSON.parse(fileString) : [];
                 obj.push(jsdata);
-                fs.writeFile(filePath, JSON.stringify(obj), function (err) { 
-                  console.log('2',err);
-                });
+                console.log('obj',obj);
+                fs.writeFile(filePath, JSON.stringify(obj), function (err) {});
               });
             });
           }).on('error', (e) => { console.log(`Got error: ${e.message}`); });
