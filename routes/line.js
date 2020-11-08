@@ -9,6 +9,7 @@ const router = express.Router();
 const fs = require('fs');
 const request = require("request");
 const cheerio = require("cheerio");
+var iconv = require('iconv-lite')
 const listArray = [];
 
 // create LINE SDK config from env variables
@@ -36,7 +37,6 @@ function handleEvent(event) {
   if (event.replyToken && event.replyToken.match(/^(.)\1*$/)) {
     return console.log('Test hook recieved: ' + JSON.stringify(event.message));
   }
-  console.log(`User ID: ${event.source.userId}`);
 
   switch (event.type) {
     case 'message':
@@ -272,6 +272,151 @@ function handleEvent(event) {
               break;
           }
           break;
+        case "stockrank":
+          var url = "https://tw.stock.yahoo.com/d/i/rank.php?t=" + data.action + "&e=tse";
+          https.get(url, (res) => {
+            //res.setEncoding('utf-8');
+            let rawData = '';
+            var arrBuf = [];
+            var bufLength = 0;
+            res.on('data', (chunk) => {
+              arrBuf.push(chunk);
+              bufLength += chunk.length;
+            }).on('end', () => {
+              try {
+                var chunkAll = Buffer.concat(arrBuf, bufLength);
+                var strJson = iconv.decode(chunkAll, 'big 5');
+                const $ = cheerio.load(strJson, { decodeEntities: false }); // 載入 body
+                const list = $("table tbody table").eq(1).find('tr');
+
+                const obj = [];
+                for (let i = 1; i < list.length; i++) {
+                  if (i > 9) break;
+                  obj.push(
+                    {
+                      "type": "box",
+                      "layout": "baseline",
+                      "contents": [
+                        {
+                          "type": "icon",
+                          "offsetTop": "xs",
+                          "url": "https://cdn3.iconfinder.com/data/icons/flat-pro-basic-set-1-1/32/number-" + i + "-128.png"
+                        },
+                        {
+                          "type": "text",
+                          "text": list.eq(i).find('td.name a').text(),
+                          "weight": "bold",
+                          "margin": "sm",
+                          "flex": 0
+                        },
+                        {
+                          "type": "text",
+                          "text": list.eq(i).find('td').eq(8).text(),
+                          "text": (function () {
+                            switch (data.action) {
+                              case "down":
+                              case "up":
+                                return list.eq(i).find('td').eq(4).text();
+                              case "vol":
+                                return list.eq(i).find('td').eq(8).text();
+                            }
+                          })(),
+                          "size": "sm",
+                          "align": "end",
+                          "color": "#aaaaaa"
+                        }
+                      ]
+                    }
+                  );
+                }
+
+                return client.replyMessage(event.replyToken, {
+                  type: 'flex',
+                  altText: 'this is a flex message',
+                  contents: {
+                    "type": "bubble",
+                    "body": {
+                      "type": "box",
+                      "layout": "vertical",
+                      "spacing": "md",
+                      "contents": [
+                        {
+                          "type": "text",
+                          "text": data.title,
+                          "size": "xl",
+                          "weight": "bold"
+                        },
+                        {
+                          "type": "box",
+                          "layout": "vertical",
+                          "contents": [
+                            {
+                              "type": "box",
+                              "layout": "baseline",
+                              "contents": [
+                                {
+                                  "type": "text",
+                                  "text": "來自",
+                                  "flex": 1,
+                                  "size": "sm",
+                                  "color": "#aaaaaa"
+                                },
+                                {
+                                  "type": "text",
+                                  "text": "yahoo股市，前五名排名",
+                                  "flex": 5,
+                                  "size": "sm",
+                                  "color": "#666666"
+                                }
+                              ],
+                              "spacing": "sm"
+                            },
+                            {
+                              "type": "box",
+                              "layout": "baseline",
+                              "contents": [
+                                {
+                                  "type": "text",
+                                  "text": "關鍵字",
+                                  "flex": 1,
+                                  "size": "sm",
+                                  "color": "#aaaaaa"
+                                },
+                                {
+                                  "type": "text",
+                                  "text": "Rank",
+                                  "flex": 5,
+                                  "size": "sm",
+                                  "color": "#666666"
+                                }
+                              ],
+                              "spacing": "sm"
+                            }
+                          ],
+                          "spacing": "sm",
+                          "margin": "lg"
+                        }
+                      ]
+                    },
+                    "footer": {
+                      "type": "box",
+                      "layout": "vertical",
+                      "spacing": "sm",
+                      "contents": obj
+                    }
+                  }
+                });
+              } catch (e) {
+                console.error(e.message);
+              }
+            });
+            process.on('unhandledRejection', error => {
+              console.error('unhandledRejection', error);
+              process.exit(1) // To exit with a 'failure' code
+            });
+          });
+          break;
+          break;
         case "others":
           switch (data.action) {
             case "textBox":
@@ -352,13 +497,7 @@ function handleEvent(event) {
         default:
           break;
       }
-      return client.replyMessage(event.replyToken, {
-        type: 'text',
-        text: `Got postback: ${JSON.stringify(data)}`
-      });
 
-    default:
-      throw new Error(`Unknown event: ${JSON.stringify(event)}`);
   }
 }
 
@@ -505,6 +644,32 @@ async function handleText(message, replyToken, source) {
                   ]
                 },
                 {
+                  "type": "box",
+                  "layout": "horizontal",
+                  "contents": [
+                    {
+                      "type": "button",
+                      "action": {
+                        "type": "message",
+                        "label": "上市股票排行",
+                        "text": "股票排行"
+                      },
+                      "height": "sm",
+                      "style": "link"
+                    },
+                    {
+                      "type": "button",
+                      "action": {
+                        "type": "message",
+                        "label": "空的",
+                        "text": "123"
+                      },
+                      "height": "sm",
+                      "style": "link"
+                    }
+                  ]
+                },
+                {
                   "type": "spacer",
                   "size": "sm"
                 }
@@ -515,6 +680,92 @@ async function handleText(message, replyToken, source) {
 
         });
       break;
+    case "Rank":
+    case "股票排行":
+      return client.replyMessage(replyToken, {
+        type: 'flex',
+        altText: 'this is a flex message',
+        contents: {
+          "type": "bubble",
+          "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              {
+                "type": "text",
+                "text": "上市股票排行",
+                "weight": "bold",
+                "size": "xl"
+              },
+              {
+                "type": "box",
+                "layout": "vertical",
+                "margin": "lg",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "box",
+                    "layout": "baseline",
+                    "spacing": "sm",
+                    "contents": [
+                      {
+                        "type": "text",
+                        "text": "以下目前有3種排行，成交量、漲幅和跌幅，目前的排行僅有上市的，上櫃的部分先等等，正在做~",
+                        "wrap": true,
+                        "color": "#666666",
+                        "size": "sm",
+                        "flex": 5
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": [
+              {
+                "type": "button",
+                "style": "link",
+                "height": "sm",
+                "action": {
+                  type: 'postback',
+                  label: '成交量',
+                  data: 'from=stockrank&action=vol&title=成交量排行'
+                }
+              },
+              {
+                "type": "button",
+                "style": "link",
+                "height": "sm",
+                "action": {
+                  type: 'postback',
+                  label: '漲幅',
+                  data: 'from=stockrank&action=up&title=漲幅排行'
+                }
+              },
+              {
+                "type": "button",
+                "style": "link",
+                "height": "sm",
+                "action": {
+                  type: 'postback',
+                  label: '跌幅',
+                  data: 'from=stockrank&action=down&title=跌幅排行'
+                }
+              },
+              {
+                "type": "spacer",
+                "size": "sm"
+              }
+            ],
+            "flex": 0
+          }
+        }
+      });
     case 'quick reply':
       return client.replyMessage(replyToken,
         {
@@ -756,7 +1007,7 @@ async function handleText(message, replyToken, source) {
                 "saying": message.text,
                 "date": new Date()
               }
-              var filePath = "./data_file/suggest.json";
+              var filePath = __dirname + "/data_file/suggest.json";
               fs.readFile(filePath, function (err, file) {
                 var fileString = file.toString();
                 var obj = fileString ? JSON.parse(fileString) : [];
@@ -784,7 +1035,6 @@ async function handleText(message, replyToken, source) {
                 const obj = [];
                 for (let i = 0; i < list.length; i++) {
                   if (i > 4) break;
-                  console.log(list.eq(i).find('.title a').text());
                   obj.push({
                     "type": "button",
                     "style": "link",
@@ -884,6 +1134,7 @@ async function handleText(message, replyToken, source) {
             });
           });
           break;
+
       }
   }
 }

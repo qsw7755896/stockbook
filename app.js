@@ -8,16 +8,21 @@ const io = require('socket.io');
 const fs = require('fs');
 const session = require('express-session');
 const FileStore = require('session-file-store')(session);
+const querystring = require('querystring')
 const line = require('@line/bot-sdk');  // 引用linebot SDK
 const lineRouter = require('./routes/line');
+const jwt_decode = require('jwt-decode')
 //const data_file = require('./data_file');
 //變數設定
 const app = express();
 const port = process.env.PORT || 3000;
 const personal = require('./data_file/personal.json')
-const stock = personal[0];
+//const stock = personal[0];
 var identityKey = 'skey';
-
+const UserProfile = {
+  line_profile: null,
+  stock: null,
+}
 // create LINE SDK client
 const config = {
   channelAccessToken: "VuaCF72mdINcaEFGS+CHDgJ1jzZRrKKmyPZemKGqWMU+Cd/SCh/y3dCxANkLecWB27535gLPwPn8tT3y4qbF9zUNezxZ4lVTotmoUb5kPZ+GoO8ObkA1zrmV/ie/UDAIdRw1X9UH/lNergpaqiO41wdB04t89/1O/w1cDnyilFU=",
@@ -48,11 +53,11 @@ app.use('/line', lineRouter);
  */
 //首頁
 app.get('/', function (req, res, next) {
-  console.log('req.session', req.session)
-  if (req.session.username) { //判斷session 狀態，如果有效，則返回主頁，否則轉到登入頁面
+  console.log('UserProfile', UserProfile)
+  //if (UserProfile.line_profile) { //判斷session 狀態，如果有效，則返回主頁，否則轉到登入頁面
     var url = "https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=";
-    for (let index = 0; index < stock.ownStock.length; index++) {
-      url += "tse_" + stock.ownStock[index].stockNum + ".tw|"
+    for (let index = 0; index < UserProfile.stock.ownStock.length; index++) {
+      url += "tse_" + UserProfile.stock.ownStock[index].stockNum + ".tw|"
     }
     // 取得即時股價
     https.get(url, (res) => {
@@ -71,9 +76,10 @@ app.get('/', function (req, res, next) {
     }).on('error', (e) => { console.log(`Got error: ${e.message}`); });
 
     res.render('index');
-  } else {
-    res.redirect('login');
-  }
+  // } else {
+  //   //res.redirect('login');
+  //   res.redirect('https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=1655218874&redirect_uri=http://localhost:3000/test/&state=12345abcde&scope=profile%20openid&nonce=09876xyz');
+  // }
 });
 //股票細項
 app.get('/stockDetail/:id', (req, res) => {
@@ -138,7 +144,53 @@ app.get('/logout', function (req, res, next) {
   });
 });
 //
-app.post('/suggest', function (req, res, next) {});
+app.get('/test/', function (req, res, next) {
+  var code = req.query.code;
+  let state = req.query.state;
+
+  const data = {
+    grant_type: 'authorization_code',
+    code: req.query.code,
+    redirect_uri: 'http://localhost:3000/test/',
+    client_id: '1655218874',
+    client_secret: 'a343af5b1405609914bbab5f450fc397'
+  };
+
+  let data1 = querystring.stringify(data)
+  const options = {
+    hostname: 'api.line.me',
+    port: 443,
+    path: '/oauth2/v2.1/token',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  }
+
+  const req1 = https.request(options, res => {
+    console.log(`statusCode: ${res.statusCode}`)
+
+    let chunks = "";
+    res.setEncoding('utf8');
+    res.on('data', function (chunk) { chunks += chunk; });
+    res.on('end', function () {
+      const parsedData = JSON.parse(chunks);
+      // var decoded = jwt_decode(parsedData.id_token);
+      userInit(jwt_decode(parsedData.id_token));
+    })
+  })
+
+  req1.on('error', error => {
+    console.error(error)
+  })
+
+  req1.write(data1)
+  req1.end()
+
+  res.render('index');
+
+});
+
 /**
  * create server
  */
@@ -152,14 +204,16 @@ server.listen(port, () => {
  */
 var servIo = io.listen(server);
 servIo.on('connection', function (socket) {
-  /* 設定首頁圖表 */
-  for (let index = 0; index < stock.ownStock.length; index++) {
-    //convert users.csv file to JSON array
-    CSVToJSON().fromFile('./data_file/stockList_' + stock.ownStock[index].stockNum + '.csv').then(array => {
-      socket.emit('priceSet', array);
+  socket.on('chartset', function () {
+    /* 設定首頁圖表 */
+    for (let index = 0; index < UserProfile.stock.ownStock.length; index++) {
+      //convert users.csv file to JSON array
+      CSVToJSON().fromFile('./data_file/stockList_' + UserProfile.stock.ownStock[index].stockNum + '.csv').then(array => {
+        socket.emit('priceSet', array);
 
-    }).catch(err => { console.log(err); });
-  }
+      }).catch(err => { console.log(err); });
+    }
+  });
 });
 
 /**
@@ -192,7 +246,7 @@ function writeCSV(jsdata, appendflag) {
         append: appendflag
       });
 
-      var newobj = stock.ownStock.find(obj => obj.stockNum === jsdata[index].c);
+      var newobj = UserProfile.stock.ownStock.find(obj => obj.stockNum === jsdata[index].c);
       if (fs.existsSync('./data_file/stockList_' + jsdata[index].c + '.csv')) {
         var element = [{
           stockNum: jsdata[index].c,
@@ -256,9 +310,9 @@ function writeCSV(jsdata, appendflag) {
  * 校正 csv檔
  */
 function CorrectionCSV() {
-  for (let y = 0; y < stock.ownStock.length; y++) {
+  for (let y = 0; y < UserProfile.stock.ownStock.length; y++) {
     //convert users.csv file to JSON array
-    CSVToJSON().fromFile('./data_file/stockList_' + stock.ownStock[y].stockNum + '.csv').then(array => {
+    CSVToJSON().fromFile('./data_file/stockList_' + UserProfile.stock.ownStock[y].stockNum + '.csv').then(array => {
       var arraytmp = [];
       var date_flag = "";
       for (let i = 0; i < array.length; i++) {
@@ -280,4 +334,21 @@ function CorrectionCSV() {
       writeCSV(arraytmp, false);
     }).catch(err => { console.log(err); });
   }
+}
+
+/**
+ * function userInit
+ * 初始化登入者
+ */
+function userInit(profile) {
+  UserProfile.line_profile = profile;
+  for (let index = 0; index < personal.length; index++) {
+    if (personal[index].id == UserProfile.line_profile.sub) {
+      UserProfile.stock = personal[index];
+      break;
+    }
+  }
+  //var socket = io.connect();
+  servIo.emit('chartset');
+
 }
