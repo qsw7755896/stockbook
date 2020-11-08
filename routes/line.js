@@ -1008,6 +1008,7 @@ async function handleText(message, replyToken, source) {
                 "date": new Date()
               }
               var filePath = __dirname + "/../data_file/suggest.json";
+              console.log('filePath',filePath);
               fs.readFile(filePath, function (err, file) {
                 var fileString = file.toString();
                 var obj = fileString ? JSON.parse(fileString) : [];
