@@ -1010,10 +1010,14 @@ async function handleText(message, replyToken, source) {
               var filePath = __dirname + "/../data_file/suggest.json";
               console.log('filePath',filePath);
               fs.readFile(filePath, function (err, file) {
+                if(err)
+                  console.log('1',err);
                 var fileString = file.toString();
                 var obj = fileString ? JSON.parse(fileString) : [];
                 obj.push(jsdata);
-                fs.writeFile(filePath, JSON.stringify(obj), function (err) { });
+                fs.writeFile(filePath, JSON.stringify(obj), function (err) { 
+                  console.log('2',err);
+                });
               });
             });
           }).on('error', (e) => { console.log(`Got error: ${e.message}`); });
