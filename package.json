@@ -25,11 +25,16 @@
     "express-session": "^1.17.1",
     "iconv-lite": "^0.6.2",
     "jwt-decode": "^3.1.1",
+    "line-login": "^1.0.14",
     "linebot": "^1.6.1",
+    "mongodb": "^3.6.3",
     "qs": "^6.9.4",
     "request": "^2.88.2",
     "session-file-store": "^1.5.0",
     "socket.io": "^2.3.0",
     "xlsx": "^0.16.8"
+  },
+  "devDependencies": {
+    "mysql": "^2.18.1"
   }
 }

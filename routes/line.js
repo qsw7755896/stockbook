@@ -9,8 +9,12 @@ const router = express.Router();
 const fs = require('fs');
 const request = require("request");
 const cheerio = require("cheerio");
-var iconv = require('iconv-lite')
-const listArray = [];
+var iconv = require('iconv-lite');
+const sqlOperation = require('../routes/sqlOperation');
+//const promise = require("promise");
+const whoIAm = {
+  userId: null
+}
 
 // create LINE SDK config from env variables
 const config = {
@@ -816,6 +820,8 @@ async function handleText(message, replyToken, source) {
         }
       );
 
+
+
     default:
       switch (true) {
         case /^股票/.test(message.text):
@@ -1008,16 +1014,16 @@ async function handleText(message, replyToken, source) {
                 "date": new Date()
               }
               var filePath = __dirname + "/../data_file/suggest.json";
-              console.log('filePath',filePath);
+              console.log('filePath', filePath);
               fs.readFile(filePath, function (err, file) {
-                if(err)
-                  console.log('1',err);
+                if (err)
+                  console.log('1', err);
                 var fileString = file.toString();
-                console.log('fileString',fileString);
+                console.log('fileString', fileString);
                 var obj = fileString ? JSON.parse(fileString) : [];
                 obj.push(jsdata);
-                console.log('obj',obj);
-                fs.writeFile(filePath, JSON.stringify(obj), function (err) {});
+                console.log('obj', obj);
+                fs.writeFile(filePath, JSON.stringify(obj), function (err) { });
               });
             });
           }).on('error', (e) => { console.log(`Got error: ${e.message}`); });
@@ -1139,7 +1145,24 @@ async function handleText(message, replyToken, source) {
             });
           });
           break;
-
+        case /^buy/.test(message.text):
+        case /^Buy/.test(message.text):
+          const arr = message.text.substring(4, message.text.length).split('/');
+          let stockNum = arr[0];
+          let stockPrice = arr[1];
+          let stockCnt = arr[2];
+          let stockDate = arr[3];
+          sqlOperation
+            .buyIn(source.userId, stockNum, stockPrice, stockCnt, stockDate)
+            .then(results => {
+              return client.replyMessage(replyToken, {
+                type: 'text',
+                text: "輸入成功"
+              });
+            })
+            .catch((err) => {
+              console.error(err)
+            });
       }
   }
 }
