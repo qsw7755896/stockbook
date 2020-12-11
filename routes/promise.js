@@ -22,7 +22,7 @@ const lineLogin = (UserProfile) => {
         const login = new line_login({
             channel_id: "1655218874",
             channel_secret: "a343af5b1405609914bbab5f450fc397",
-            callback_url: "https://8bdfabeda6d5.ngrok.io/login",
+            callback_url: "https://macabre-witch-41487.herokuapp.com/login",
             scope: "openid profile",
             prompt: "consent",
             bot_prompt: "normal"
